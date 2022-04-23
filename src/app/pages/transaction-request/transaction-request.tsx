@@ -7,6 +7,7 @@ import { useRouteHeader } from '@app/common/hooks/use-route-header';
 import { useFeeSchema } from '@app/common/validation/use-fee-schema';
 import { LoadingKeys, useLoading } from '@app/common/hooks/use-loading';
 import { useNextTxNonce } from '@app/common/hooks/account/use-next-tx-nonce';
+import { EditNonceDrawer } from '@app/features/edit-nonce-drawer/edit-nonce-drawer';
 import { HighFeeDrawer } from '@app/features/high-fee-drawer/high-fee-drawer';
 import { PopupHeader } from '@app/pages/transaction-request/components/popup-header';
 import { PageTop } from '@app/pages/transaction-request/components/page-top';
@@ -20,17 +21,13 @@ import {
   useTransactionRequestState,
   useUpdateTransactionBroadcastError,
 } from '@app/store/transactions/requests.hooks';
-import {
-  useLocalTransactionInputsState,
-  useTransactionBroadcast,
-} from '@app/store/transactions/transaction.hooks';
+import { useTransactionBroadcast } from '@app/store/transactions/transaction.hooks';
 import { useFeeEstimationsState } from '@app/store/transactions/fees.hooks';
+import { useAnalytics } from '@app/common/hooks/analytics/use-analytics';
+import { Estimations } from '@shared/models/fees-types';
 
 import { FeeForm } from './components/fee-form';
 import { SubmitAction } from './components/submit-action';
-import { useUnsignedTransactionFee } from './hooks/use-signed-transaction-fee';
-import { useAnalytics } from '@app/common/hooks/analytics/use-analytics';
-import { Estimations } from '@shared/models/fees-types';
 
 function TransactionRequestBase(): JSX.Element | null {
   useNextTxNonce();
@@ -39,12 +36,8 @@ function TransactionRequestBase(): JSX.Element | null {
   const handleBroadcastTransaction = useTransactionBroadcast();
   const setBroadcastError = useUpdateTransactionBroadcastError();
   const [, setFeeEstimations] = useFeeEstimationsState();
-  const [, setTxData] = useLocalTransactionInputsState();
-  const { isSponsored } = useUnsignedTransactionFee();
   const feeSchema = useFeeSchema();
   const analytics = useAnalytics();
-
-  const validationSchema = !isSponsored ? yup.object({ fee: feeSchema() }) : null;
 
   useRouteHeader(<PopupHeader />);
 
@@ -52,17 +45,8 @@ function TransactionRequestBase(): JSX.Element | null {
 
   const onSubmit = useCallback(
     async values => {
-      // Using the same pattern here as is used in the send tokens
-      // form, but maybe we can get rid of global form state when
-      // we refactor transaction signing?
-      setTxData({
-        amount: '',
-        fee: values.fee,
-        memo: '',
-        recipient: '',
-      });
       setIsLoading();
-      await handleBroadcastTransaction();
+      await handleBroadcastTransaction(values);
       setIsIdle();
       setFeeEstimations([]);
       void analytics.track('submit_fee_for_transaction', {
@@ -71,7 +55,6 @@ function TransactionRequestBase(): JSX.Element | null {
       });
       return () => {
         setBroadcastError(null);
-        setTxData(null);
       };
     },
     [
@@ -81,11 +64,12 @@ function TransactionRequestBase(): JSX.Element | null {
       setFeeEstimations,
       setIsIdle,
       setIsLoading,
-      setTxData,
     ]
   );
 
   if (!transactionRequest) return null;
+
+  const validationSchema = !transactionRequest.sponsored ? yup.object({ fee: feeSchema() }) : null;
 
   return (
     <Stack px={['loose', 'unset']} spacing="loose">
@@ -97,7 +81,7 @@ function TransactionRequestBase(): JSX.Element | null {
       {transactionRequest.txType === 'token_transfer' && <StxTransferDetails />}
       {transactionRequest.txType === 'smart_contract' && <ContractDeployDetails />}
       <Formik
-        initialValues={{ fee: '', feeType: Estimations[Estimations.Middle] }}
+        initialValues={{ fee: '', feeType: Estimations[Estimations.Middle], nonce: 0 }}
         onSubmit={onSubmit}
         validateOnChange={false}
         validateOnBlur={false}
@@ -106,6 +90,7 @@ function TransactionRequestBase(): JSX.Element | null {
       >
         {() => (
           <>
+            <EditNonceDrawer />
             <FeeForm />
             <SubmitAction />
             <HighFeeDrawer />

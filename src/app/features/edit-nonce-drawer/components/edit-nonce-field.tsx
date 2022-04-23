@@ -3,7 +3,6 @@ import { useField } from 'formik';
 import { Input, InputGroup, Stack, StackProps, Text } from '@stacks/ui';
 import { ErrorLabel } from '@app/components/error-label';
 
-// TODO: this should use a new "Field" component (with inline label like in figma)
 export const EditNonceField = memo((props: StackProps) => {
   const [field, meta] = useField('nonce');
 

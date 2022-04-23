@@ -24,8 +24,8 @@ import { useFeeEstimationsState } from '@app/store/transactions/fees.hooks';
 import { SendFormSelectors } from '@tests/page-objects/send-form.selectors';
 import {
   useEstimatedTransactionByteLength,
+  useSendFormUnsignedTxState,
   useSerializedTransactionPayloadState,
-  useUnsignedTxForSettingsState,
 } from '@app/store/transactions/transaction.hooks';
 
 import { SendFormMemoWarning } from './memo-warning';
@@ -43,11 +43,11 @@ interface SendFormInnerProps {
 }
 export function SendFormInner(props: SendFormInnerProps) {
   const { assetError } = props;
-  const { handleSubmit, values, setValues, errors, setFieldError, setFieldValue, validateForm } =
+  const { handleSubmit, values, setValues, errors, setFieldError, validateForm } =
     useFormikContext<TransactionFormValues>();
   const { showHighFeeConfirmation, setShowHighFeeConfirmation } = useDrawers();
-  const serializedTxPayload = useSerializedTransactionPayloadState();
-  const estimatedTxByteLength = useEstimatedTransactionByteLength();
+  const serializedTxPayload = useSerializedTransactionPayloadState(values);
+  const estimatedTxByteLength = useEstimatedTransactionByteLength(values);
   const { data: feeEstimationsResp, isError } = useFeeEstimationsQuery(
     serializedTxPayload,
     estimatedTxByteLength
@@ -59,10 +59,11 @@ export function SendFormInner(props: SendFormInnerProps) {
   const { selectedAsset } = useSelectedAsset();
   const assets = useTransferableAssets();
   const analytics = useAnalytics();
-  const transaction = useUnsignedTxForSettingsState();
+  const transaction = useSendFormUnsignedTxState(values);
   const isSponsored = transaction ? isTxSponsored(transaction) : false;
 
   useNextTxNonce();
+
   useEffect(() => {
     if (!values.fee && feeEstimationsResp) {
       if (
@@ -86,7 +87,7 @@ export function SendFormInner(props: SendFormInnerProps) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estimatedTxByteLength, feeEstimationsResp, isError, setFeeEstimations, setFieldValue]);
+  }, [estimatedTxByteLength, feeEstimationsResp, isError, setFeeEstimations]);
 
   const onSubmit = useCallback(async () => {
     if (selectedAsset && values.amount && values.recipient && values.fee) {

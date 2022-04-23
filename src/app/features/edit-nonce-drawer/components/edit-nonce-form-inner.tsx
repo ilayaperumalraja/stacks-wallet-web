@@ -1,23 +1,16 @@
-import { useEffect } from 'react';
 import { useFormikContext } from 'formik';
 import { Button, Stack } from '@stacks/ui';
 
 import { LoadingKeys, useLoading } from '@app/common/hooks/use-loading';
 import { useDrawers } from '@app/common/hooks/use-drawers';
-import { useUnsignedTxForSettingsState } from '@app/store/transactions/transaction.hooks';
 
 import { EditNonceField } from './edit-nonce-field';
+import { TransactionFormValues } from '@app/common/transactions/transaction-utils';
 
 export function EditNonceFormInner(): JSX.Element {
-  const { setFieldValue, handleSubmit } = useFormikContext();
+  const { handleSubmit } = useFormikContext<TransactionFormValues>();
   const { isLoading } = useLoading(LoadingKeys.EDIT_NONCE_DRAWER);
-  const transaction = useUnsignedTxForSettingsState();
-  const nonce = Number(transaction?.auth.spendingCondition?.nonce);
   const { setShowEditNonce } = useDrawers();
-
-  useEffect(() => {
-    setFieldValue('nonce', nonce);
-  }, [setFieldValue, nonce]);
 
   return (
     <>
