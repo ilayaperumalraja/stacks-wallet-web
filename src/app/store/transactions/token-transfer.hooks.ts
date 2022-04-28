@@ -24,7 +24,6 @@ import { makePostCondition } from '@app/store/transactions/transaction.hooks';
 import { currentAccountState, currentAccountStxAddressState } from '@app/store/accounts';
 import { currentStacksNetworkState } from '@app/store/network/networks';
 import { currentAccountNonceState } from '@app/store/accounts/nonce';
-import { customNonceState } from '@app/store/transactions/nonce.hooks';
 import {
   generateUnsignedTransaction,
   GenerateUnsignedTransactionOptions,
@@ -42,15 +41,15 @@ const stxTokenTransferAtomDeps = atom(get =>
   )
 );
 
-export function useStxTokenTransferUnsignedTxState(values: TransactionFormValues) {
+export function useStxTokenTransferUnsignedTxState(values?: TransactionFormValues) {
   const address = useAtomValue(currentAccountStxAddressState);
-  const customNonce = useAtomValue(customNonceState);
   const { network, account, nonce } = useAtomValue(stxTokenTransferAtomDeps);
 
   return useAsync(async () => {
     if (!address) return;
     if (!account || typeof nonce === 'undefined') return;
-    const txNonce = typeof customNonce === 'number' ? customNonce : nonce;
+    const txNonce = Number(values?.nonce) || nonce;
+
     const options: GenerateUnsignedTransactionOptions = {
       publicKey: publicKeyToString(pubKeyfromPrivKey(account.stxPrivateKey)),
       nonce: txNonce,
@@ -69,13 +68,11 @@ export function useStxTokenTransferUnsignedTxState(values: TransactionFormValues
       } as STXTransferPayload,
     };
     return generateUnsignedTransaction(options);
-  }, [values, address, customNonce, network, account, nonce]).result;
+  }, [values, address, network, account, nonce]).result;
 }
 
-export function useFtTokenTransferUnsignedTx(values: TransactionFormValues) {
+export function useFtTokenTransferUnsignedTx(values?: TransactionFormValues) {
   const address = useAtomValue(currentAccountStxAddressState);
-  const customNonce = useAtomValue(customNonceState);
-
   const account = useAtomValue(currentAccountState);
   const assetTransferState = useMakeFungibleTokenTransfer();
   const selectedAsset = useSelectedAssetItem();
@@ -88,7 +85,7 @@ export function useFtTokenTransferUnsignedTx(values: TransactionFormValues) {
 
     const functionName = 'transfer';
 
-    const txNonce = typeof customNonce === 'number' ? customNonce : nonce;
+    const txNonce = Number(values?.nonce) || nonce;
 
     const realAmount =
       selectedAsset.type === 'ft'
@@ -138,10 +135,10 @@ export function useFtTokenTransferUnsignedTx(values: TransactionFormValues) {
     } as const;
 
     return generateUnsignedTransaction(options);
-  }, [values, address, customNonce, account, assetTransferState, selectedAsset]).result;
+  }, [values, address, account, assetTransferState, selectedAsset]).result;
 }
 
-export function useMakeFungibleTokenTransfer() {
+function useMakeFungibleTokenTransfer() {
   const asset = useSelectedAssetItem();
   const currentAccount = useAtomValue(currentAccountState);
   const network = useAtomValue(currentStacksNetworkState);

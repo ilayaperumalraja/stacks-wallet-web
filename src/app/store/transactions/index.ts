@@ -20,7 +20,6 @@ import { currentAccountState, currentAccountStxAddressState } from '@app/store/a
 import { requestTokenPayloadState } from '@app/store/transactions/requests';
 import { postConditionsState } from '@app/store/transactions/post-conditions';
 import { generateUnsignedTransaction } from '@app/common/transactions/generate-unsigned-txs';
-import { customNonceState } from './nonce.hooks';
 
 export const transactionAttachmentState = atom(get => get(requestTokenPayloadState)?.attachment);
 
@@ -31,10 +30,8 @@ export const unsignedStacksTransactionBaseState = atom(get => {
   const account = get(currentAccountState);
   const stxAddress = get(currentAccountStxAddressState);
   const nonce = get(currentAccountNonceState);
-  const customNonce = get(customNonceState);
   if (!account || !payload || !stxAddress || typeof nonce === 'undefined')
     return { transaction: undefined, options: {} };
-  const txNonce = typeof customNonce === 'number' ? customNonce : nonce;
   if (
     payload.txType === TransactionTypes.ContractCall &&
     !validateStacksAddress(payload.contractAddress)
@@ -44,7 +41,7 @@ export const unsignedStacksTransactionBaseState = atom(get => {
   const publicKey = publicKeyToString(pubKeyfromPrivKey(account.stxPrivateKey));
   const options = {
     publicKey,
-    nonce: txNonce,
+    nonce,
     txData: { ...payload, postConditions, network },
     fee: 0,
   };

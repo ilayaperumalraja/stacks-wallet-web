@@ -2,6 +2,7 @@ import { memo, Suspense, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Formik } from 'formik';
+import { StacksTransaction } from '@stacks/transactions';
 
 import { useHomeTabs } from '@app/common/hooks/use-home-tabs';
 import { useRouteHeader } from '@app/common/hooks/use-route-header';
@@ -14,16 +15,15 @@ import { EditNonceDrawer } from '@app/features/edit-nonce-drawer/edit-nonce-draw
 import { HighFeeDrawer } from '@app/features/high-fee-drawer/high-fee-drawer';
 import { useSelectedAsset } from '@app/pages/send-tokens/hooks/use-selected-asset';
 import { useSendFormValidation } from '@app/pages/send-tokens/hooks/use-send-form-validation';
+import { useCurrentAccountNonce } from '@app/store/accounts/nonce.hooks';
 import { useFeeEstimationsState } from '@app/store/transactions/fees.hooks';
 import { useSignTransactionSoftwareWallet } from '@app/store/transactions/transaction.hooks';
 import { logger } from '@shared/logger';
 import { Estimations } from '@shared/models/fees-types';
 import { RouteUrls } from '@shared/route-urls';
-import { StacksTransaction } from '@stacks/transactions';
 
 import { SendTokensConfirmDrawer } from './components/send-tokens-confirm-drawer/send-tokens-confirm-drawer';
 import { SendFormInner } from './components/send-form-inner';
-import { useResetNonceCallback } from './hooks/use-reset-nonce-callback';
 
 function SendTokensFormBase() {
   const navigate = useNavigate();
@@ -33,18 +33,17 @@ function SendTokensFormBase() {
   const { setActiveTabActivity } = useHomeTabs();
   const { selectedAsset } = useSelectedAsset();
   const sendFormSchema = useSendFormValidation({ setAssetError });
-  const resetNonceCallback = useResetNonceCallback();
   const [_, setFeeEstimations] = useFeeEstimationsState();
   const signSoftwareWalletTx = useSignTransactionSoftwareWallet();
+  const nonce = useCurrentAccountNonce();
   const analytics = useAnalytics();
 
   useRouteHeader(<Header title="Send" onClose={() => navigate(RouteUrls.Home)} />);
 
   const handleConfirmDrawerOnClose = useCallback(() => {
     setShowing(false);
-    resetNonceCallback();
     void setActiveTabActivity();
-  }, [resetNonceCallback, setActiveTabActivity]);
+  }, [setActiveTabActivity]);
 
   const broadcastTransactionFn = useHandleSubmitTransaction({
     loadingKey: LoadingKeys.CONFIRM_DRAWER,
@@ -85,11 +84,11 @@ function SendTokensFormBase() {
 
   const initialValues = {
     amount: '',
-    recipient: '',
     fee: '',
-    memo: '',
     feeType: Estimations[Estimations.Middle],
-    nonce: 0,
+    memo: '',
+    nonce,
+    recipient: '',
   };
 
   return (

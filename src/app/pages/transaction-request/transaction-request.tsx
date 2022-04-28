@@ -6,7 +6,6 @@ import { Stack } from '@stacks/ui';
 import { useRouteHeader } from '@app/common/hooks/use-route-header';
 import { useFeeSchema } from '@app/common/validation/use-fee-schema';
 import { LoadingKeys, useLoading } from '@app/common/hooks/use-loading';
-import { useNextTxNonce } from '@app/common/hooks/account/use-next-tx-nonce';
 import { EditNonceDrawer } from '@app/features/edit-nonce-drawer/edit-nonce-drawer';
 import { HighFeeDrawer } from '@app/features/high-fee-drawer/high-fee-drawer';
 import { PopupHeader } from '@app/pages/transaction-request/components/popup-header';
@@ -28,9 +27,9 @@ import { Estimations } from '@shared/models/fees-types';
 
 import { FeeForm } from './components/fee-form';
 import { SubmitAction } from './components/submit-action';
+import { nonceSchema } from '@app/common/validation/nonce-schema';
 
 function TransactionRequestBase(): JSX.Element | null {
-  useNextTxNonce();
   const transactionRequest = useTransactionRequestState();
   const { setIsLoading, setIsIdle } = useLoading(LoadingKeys.SUBMIT_TRANSACTION);
   const handleBroadcastTransaction = useTransactionBroadcast();
@@ -69,7 +68,9 @@ function TransactionRequestBase(): JSX.Element | null {
 
   if (!transactionRequest) return null;
 
-  const validationSchema = !transactionRequest.sponsored ? yup.object({ fee: feeSchema() }) : null;
+  const validationSchema = !transactionRequest.sponsored
+    ? yup.object({ fee: feeSchema(), nonce: nonceSchema })
+    : null;
 
   return (
     <Stack px={['loose', 'unset']} spacing="loose">
@@ -81,7 +82,7 @@ function TransactionRequestBase(): JSX.Element | null {
       {transactionRequest.txType === 'token_transfer' && <StxTransferDetails />}
       {transactionRequest.txType === 'smart_contract' && <ContractDeployDetails />}
       <Formik
-        initialValues={{ fee: '', feeType: Estimations[Estimations.Middle], nonce: 0 }}
+        initialValues={{ fee: '', feeType: Estimations[Estimations.Middle], nonce: '' }}
         onSubmit={onSubmit}
         validateOnChange={false}
         validateOnBlur={false}

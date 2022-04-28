@@ -65,14 +65,14 @@ export function useEstimatedUnsignedTransactionByteLengthState() {
   return useAtomValue(estimatedUnsignedTransactionByteLengthState);
 }
 
-export function useSerializedTransactionPayloadState(values: TransactionFormValues) {
+export function useSerializedTransactionPayloadState(values?: TransactionFormValues) {
   const transaction = useSendFormUnsignedTxState(values);
   if (!transaction) return '';
   const serializedTxPayload = serializePayload(transaction.payload);
   return serializedTxPayload.toString('hex');
 }
 
-export function useEstimatedTransactionByteLength(values: TransactionFormValues) {
+export function useEstimatedTransactionByteLength(values?: TransactionFormValues) {
   const transaction = useSendFormUnsignedTxState(values);
   if (!transaction) return null;
   const serializedTx = transaction.serialize();
@@ -115,6 +115,7 @@ export function useTransactionBroadcast() {
         const unsignedStacksTransaction = await generateUnsignedTransaction({
           ...options,
           fee: stxToMicroStx(values.fee),
+          nonce: Number(values.nonce) || options.nonce,
         });
 
         if (!account || !requestToken || !unsignedStacksTransaction) {
@@ -179,13 +180,15 @@ function useUnsignedStacksTransaction(values: TransactionFormValues) {
   return useAsync(async () => {
     if (!stacksTxBaseState) return undefined;
     const { options } = stacksTxBaseState as any;
-    return generateUnsignedTransaction({ ...options, fee: values.fee });
+    return generateUnsignedTransaction({
+      ...options,
+      fee: values.fee,
+      nonce: Number(values.nonce) || options.nonce,
+    });
   }, [stacksTxBaseState]).result;
 }
 
-export function useUnsignedTokenTransferTransaction() {}
-
-export function useSendFormUnsignedTxState(values: TransactionFormValues) {
+export function useSendFormUnsignedTxState(values?: TransactionFormValues) {
   const isSendingStx = useIsSendingFormSendingStx();
   const stxTokenTransferUnsignedTx = useStxTokenTransferUnsignedTxState(values);
   const ftTokenTransferUnsignedTx = useFtTokenTransferUnsignedTx(values);
