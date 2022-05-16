@@ -11,4 +11,5 @@ export interface DecodedAuthRequest {
   };
   client?: string;
   connectVersion?: string;
+  enableGaiaSelection?: boolean;
 }

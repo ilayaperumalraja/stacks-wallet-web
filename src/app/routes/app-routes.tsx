@@ -30,6 +30,7 @@ import { RouteUrls } from '@shared/route-urls';
 import { useOnWalletLock } from './hooks/use-on-wallet-lock';
 import { useOnSignOut } from './hooks/use-on-sign-out';
 import { OnboardingGate } from './onboarding-gate';
+import { ChooseStorage } from '@app/pages/choose-storage/choose-storage';
 
 export function AppRoutes(): JSX.Element | null {
   const { pathname } = useLocation();
@@ -105,6 +106,16 @@ export function AppRoutes(): JSX.Element | null {
             <AccountGate>
               <Suspense fallback={<></>}>
                 <BuyPage />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
+          path={RouteUrls.ChooseStorage}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <ChooseStorage />
               </Suspense>
             </AccountGate>
           }

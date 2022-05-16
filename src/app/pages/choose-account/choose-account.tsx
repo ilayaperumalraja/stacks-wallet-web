@@ -8,10 +8,17 @@ import { useWallet } from '@app/common/hooks/use-wallet';
 import { useAppDetails } from '@app/common/hooks/auth/use-app-details';
 import { Header } from '@app/components/header';
 import { Accounts } from '@app/pages/choose-account/components/accounts';
+import { useStorageConfig } from '@app/store/storage/storage.hook';
+import { useOnboardingState } from '@app/common/hooks/auth/use-onboarding-state';
+import { RouteUrls } from '@shared/route-urls';
+import { useNavigate } from 'react-router-dom';
 
 export const ChooseAccount = memo(() => {
   const { name: appName } = useAppDetails();
   const { cancelAuthentication } = useWallet();
+  const { ownGaiaHubUrl } = useStorageConfig();
+  const { decodedAuthRequest } = useOnboardingState();
+  const navigate = useNavigate();
 
   useRouteHeader(<Header hideActions />);
 
@@ -23,6 +30,12 @@ export const ChooseAccount = memo(() => {
     window.addEventListener('beforeunload', handleUnmount);
     return () => window.removeEventListener('beforeunload', handleUnmount);
   }, [handleUnmount]);
+
+  useEffect(() => {
+    if (decodedAuthRequest?.enableGaiaSelection && !ownGaiaHubUrl) {
+      navigate(RouteUrls.ChooseStorage);
+    }
+  }, [decodedAuthRequest, ownGaiaHubUrl, navigate]);
 
   return (
     <Flex flexDirection="column" px="loose" width="100%">

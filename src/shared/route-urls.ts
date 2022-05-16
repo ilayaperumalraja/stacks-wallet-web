@@ -11,6 +11,7 @@ export enum RouteUrls {
   Home = '/',
   AddNetwork = '/add-network',
   Buy = '/buy',
+  ChooseStorage = '/choose-storage',
   ChooseAccount = '/choose-account',
   Receive = '/receive',
   Send = '/send',

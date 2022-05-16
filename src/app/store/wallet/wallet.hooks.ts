@@ -17,6 +17,7 @@ import { finalizeAuthResponse } from '@app/common/actions/finalize-auth-response
 import { logger } from '@shared/logger';
 import { encryptedSecretKeyState, secretKeyState, walletState } from './wallet';
 import { useKeyActions } from '@app/common/hooks/use-key-actions';
+import { useStorageConfig } from '../storage/storage.hook';
 
 export function useWalletState() {
   return useAtom(walletState);
@@ -46,6 +47,7 @@ export function useSetLatestNonceCallback() {
 
 export function useFinishSignInCallback() {
   const { decodedAuthRequest, authRequest, appName, appIcon } = useOnboardingState();
+  const { ownGaiaHubUrl } = useStorageConfig();
   const keyActions = useKeyActions();
   return useAtomCallback<void, number>(
     useCallback(
@@ -57,7 +59,8 @@ export function useFinishSignInCallback() {
           return;
         }
         const appURL = new URL(decodedAuthRequest.redirect_uri);
-        const gaiaHubConfig = await createWalletGaiaConfig({ gaiaHubUrl: gaiaUrl, wallet });
+        const gaiaHubUrl = ownGaiaHubUrl || gaiaUrl;
+        const gaiaHubConfig = await createWalletGaiaConfig({ gaiaHubUrl, wallet });
         const walletConfig = await getOrCreateWalletConfig({
           wallet,
           gaiaHubConfig,
@@ -77,7 +80,7 @@ export function useFinishSignInCallback() {
           },
         });
         const authResponse = await makeAuthResponse({
-          gaiaHubUrl: gaiaUrl,
+          gaiaHubUrl,
           appDomain: appURL.origin,
           transitPublicKey: decodedAuthRequest.public_keys[0],
           scopes: decodedAuthRequest.scopes,
